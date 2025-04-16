@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sounddevice as sd
 
-# Dicionário de acordes com as respectivas frequências (em Hz)
 chords = {
     'do_maior': [523.25, 659.25, 783.99],
     're_menor': [587.33, 698.46, 880.00],
@@ -14,7 +13,6 @@ chords = {
 }
 
 def main():
-    # Exibe menu de acordes para o usuário
     print("Escolha um acorde para emissão:")
     for idx, chord in enumerate(chords.keys()):
         print(f"{idx+1}: {chord}")
@@ -27,46 +25,45 @@ def main():
         print("Entrada inválida!")
         return
     
-    # Seleciona o acorde e exibe as frequências correspondentes
     chord_name = list(chords.keys())[opcao - 1]
     freq_list = chords[chord_name]
     print(f"Acorde escolhido: {chord_name} - Frequências: {freq_list}")
 
-    # Configurações do áudio
-    fs = 44100        # Taxa de amostragem (Hz)
-    duration = 3      # Duração do sinal em segundos
+    fs = 44100
+    duration = 3
     t = np.linspace(0, duration, int(fs * duration), endpoint=False)
 
-    # Geração do sinal: soma das três senoides
+    # Geração do sinal com amplitudes iguais
     signal = np.zeros_like(t)
     for f in freq_list:
         signal += np.sin(2 * np.pi * f * t)
-    signal /= np.max(np.abs(signal))  # Normalização
+    signal = signal / len(freq_list)  # Normaliza pela quantidade de senoides
+    signal = signal / np.max(np.abs(signal)) * 0.9  # Normaliza para 90% da amplitude máxima
 
-    # Reprodução do sinal via placa de som
     print("Reproduzindo áudio...")
     sd.play(signal, fs)
-    sd.wait()  # Espera a reprodução terminar
+    sd.wait()
 
-    # Plot do sinal no domínio do tempo (exibindo os primeiros mil pontos)
-    plt.figure()
+    # Plot do sinal no domínio do tempo
+    plt.figure(figsize=(10, 4))
     plt.plot(t[:1000], signal[:1000])
-    plt.title("Sinal no Domínio do Tempo - Emissor")
+    plt.title(f"Sinal no Domínio do Tempo - {chord_name}")
     plt.xlabel("Tempo (s)")
     plt.ylabel("Amplitude")
     plt.grid(True)
     plt.show()
 
-    # Cálculo e plot da FFT do sinal emitido
+    # Cálculo e plot da FFT
     N = len(signal)
     fft_signal = np.fft.fft(signal)
     fft_freq = np.fft.fftfreq(N, d=1/fs)
     idx_positive = np.where(fft_freq >= 0)
-    plt.figure()
+    plt.figure(figsize=(10, 4))
     plt.plot(fft_freq[idx_positive], np.abs(fft_signal[idx_positive]))
-    plt.title("Transformada de Fourier do Sinal Emitido")
+    plt.title(f"Transformada de Fourier do Sinal Emitido - {chord_name}")
     plt.xlabel("Frequência (Hz)")
     plt.ylabel("Magnitude")
+    plt.xlim(0, 1500)
     plt.grid(True)
     plt.show()
 
